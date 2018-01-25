@@ -24,7 +24,7 @@ object SensorApi {
     val parseStartDate = fmt.print(startDate)
     val parseEndDate = fmt.print(endDate)
 
-    val query = Map(
+    val query = Seq(
       "sensor_name" -> Some(sensorName),
       "start_time" -> Some(parseStartDate),
       "end_time" -> Some(parseEndDate),
@@ -34,21 +34,21 @@ object SensorApi {
 
     val client = Http.newService("uoweb1.ncl.ac.uk:80")
 
-    val request = http.Request("/api/v1/sensor/data/raw.json", flattenMap(query).toSeq: _*)
+    val request = http.Request("/api/v1/sensor/data/raw.json", flattenMap(query): _*)
 
     client(request)
   }
 
   /**
-    * Flatten a map of keys to options of values
+    * Flatten a sequence of keys -> to options of values
     * @param m a map from keys to optional values
     * @tparam A the type of the keys
     * @tparam B the type of the values
     * @return a map containing all the values which are present
     */
-  def flattenMap[A, B](m: Map[A, Option[B]]): Map[A, B] = {
+  def flattenMap[A, B](m: Seq[(A, Option[B])]): Seq[(A, B)] = {
     m.filter { case (k, v) => v.isDefined }.
-      mapValues(v => v.get)
+      map { case (k, v) => k -> v.get }
   }
 
   /**
@@ -76,16 +76,17 @@ object SensorApi {
                     latitude:   Double,
                     radius:     Double
                    )(implicit apiKey: String): Future[http.Response] = {
-      val query = Map(
+      val query = Seq(
         "api_key" -> Some(apiKey),
         "sensor_type" -> sensorType.map(buildList),
         "variable" -> variable.map(buildList),
         "buffer" -> Some(s"$longitude,$latitude,$radius")
       )
 
-      val client = Http.newService("http://uoweb1.ncl.ac.uk/api/v1/sensors.json")
+      val client = Http.newService("uoweb1.ncl.ac.uk:80")
 
-      val request = http.Request("http://uoweb1.ncl.ac.uk/api/v1/sensors.json", flattenMap(query).toSeq: _*)
+      val request = http.Request("/api/v1/sensors.json", flattenMap(query): _*)
+
       client(request)
     }
 }
